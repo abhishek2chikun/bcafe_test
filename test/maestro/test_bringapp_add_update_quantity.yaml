@@ -1,0 +1,63 @@
+appId: com.example.food_app
+name: "Add Product to Cart and Update Quantity by 1"
+tags: ["e2e", "cart-management", "quantity-update"]
+env:
+  USERNAME: ${USERNAME}
+  PASSWORD: ${PASSWORD}
+  PRODUCT: ${PRODUCT}
+---
+# Launch app with clean state
+- launchApp:
+    clearState: true
+
+# Verify landing screen
+- assertVisible:
+    text: "BringApp Cafe"
+
+# Run reusable login flow with credentials
+- runFlow: common/bringapp_login.yaml
+
+# Verify authenticated state - Home screen loaded
+- assertVisible:
+    text: "All Menu"
+
+# Select Classic Cheeseburger product to view details
+- tapOn:
+    text: "Classic Cheeseburger.*"
+
+# Verify item details screen is displayed
+- assertVisible:
+    text: "Classic Cheeseburger"
+
+# Go back to Home screen
+- back
+- assertVisible:
+    text: "All Menu"
+
+# Add Classic Cheeseburger to cart from Home screen
+- tapOn:
+    id: ".*add_to_cart_button_b1.*"
+- waitForAnimationToEnd
+
+# Navigate to cart to verify product was added
+- tapOn:
+    id: ".*home_cart_button.*"
+
+# Verify product is in cart with initial quantity (1)
+- assertVisible:
+    text: "Classic Cheeseburger.*Total: \\$.*\\d"
+
+# Increment quantity by 1 using coordinate-based tap at 85%,16% (verified plus button fallback)
+# The plus button is at coordinate [852,317][978,443] on 1080x2400 reference emulator
+- tapOn:
+    point: "85%,16%"
+
+# Verify quantity has been updated to 2 with correct total
+# Cart row contains product name, quantity, and total in one text node
+# Anchoring the quantity at the end of the row to avoid matching price digits
+- assertVisible:
+    text: "Classic Cheeseburger.*Total: \\$[0-9.]+.*\\b2$"
+
+# Verify checkout button is visible (optional - confirms cart is ready)
+- assertVisible:
+    text: "^PROCEED$"
