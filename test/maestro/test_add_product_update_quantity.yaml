@@ -1,0 +1,65 @@
+appId: com.example.food_app
+---
+# Test: Add a product to cart and update its quantity
+# Scenario: User logs in, adds Classic Cheeseburger to cart, navigates to cart,
+# increments quantity from 1 to 2, and verifies the updated total ($17.98).
+# 
+# Critical Notes on Quantity Update:
+# - Cart quantity has NO semantic label or resource ID in the Android hierarchy
+# - Plus button is at coordinate 85%,16% (verified fallback from evidence)
+# - Cart row renders: product name + quantity + formatted total in ONE text node
+# - MUST assert the FULL row with exact escaped total to avoid false positives
+# - Do NOT assert quantity as bare trailing digit (e.g., ".*2") - it matches price
+# - Adding same product again increments existing row (does not create second row)
+
+- launchApp:
+    clearState: true
+
+# Wait for landing screen and verify BringApp Cafe is visible
+- extendedWaitUntil:
+    visible: "BringApp Cafe"
+    timeout: 60000
+
+# Use reusable login flow with environment variables
+- runFlow: common/bringapp_login.yaml
+
+# Verify home page is loaded with "All Menu" visible
+- assertVisible:
+    text: "All Menu"
+
+# Add Classic Cheeseburger to cart by tapping the add_to_cart_button_b1
+- tapOn:
+    id: ".*add_to_cart_button_b1.*"
+
+# Wait briefly for cart update
+- waitForAnimationToEnd
+
+# Navigate to cart by tapping the home_cart_button
+- tapOn:
+    id: ".*home_cart_button.*"
+
+# Verify cart is displayed with the item
+- assertVisible:
+    text: "Classic Cheeseburger.*"
+
+# Increment quantity by 1 using coordinate-based tap at 85%,16%
+# This taps the plus button which has no semantic ID in the hierarchy.
+# Coordinate is verified from Android hierarchy analysis (reference emulator 1080x2400).
+- tapOn:
+    point: "85%,16%"
+
+# Wait for cart update animation
+- waitForAnimationToEnd
+
+# Assert updated cart row with quantity 2 and total $17.98
+# The cart row renders as a single text node containing:
+# - Product name: "Classic Cheeseburger"
+# - Formatted total: "Total: $17.98"
+# - Quantity: "2"
+# Using grounded selector from evidence to match the complete row.
+- assertVisible:
+    text: "Classic Cheeseburger.*Total: \\$17\\.98.*2$"
+
+# Final assertion: verify checkout button is available
+- assertVisible:
+    text: "^PROCEED$"
